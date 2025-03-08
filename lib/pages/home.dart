@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-
-// Ini HTTP to get fetch api from the link we choose in the web
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:in_a_year/pages/todoLeisure_tile.dart';
 
 class HomePage extends StatefulWidget {
@@ -19,141 +18,281 @@ class _HomePageState extends State<HomePage> {
   String userName = "Edward"; // Profile picture
   String quote = "Loading quote..."; // Initial quote before API fetch
   String author = ""; // Author of the quote
-  late Timer
-      _timer; // Timer for periodic updates the Late keyword means it will be initialized later in the initState
+  late Timer _timer; // Timer for periodic updates
+  int totalTask = 0; // Completed tasks
+  int level = 1;
+  int tasksToLevelUp = 5; // Tasks required for next level
 
-  // Runs when the the widget is created, it runs only once when the screen widget is first created
-  // this is where we set up things that should start when the app loads
+  // List of tasks
+  List<Map<String, String>> tasks = [
+    {"title": "Watch a movie", "dueDate": "2024-03-10"},
+    {"title": "Read a book", "dueDate": "2024-03-12"},
+    {"title": "Go for a walk", "dueDate": "2024-03-15"},
+    {"title": "Go for a walk", "dueDate": "2024-03-15"},
+    {"title": "Go for a walk", "dueDate": "2024-03-15"},
+    {"title": "Go for a walk", "dueDate": "2024-03-15"},
+  ];
+
+  // Runs when the widget is created
   @override
   void initState() {
-    // using super.initState does not break flutter default behavior so it keeps existing
     super.initState();
-    fetchQuote(); // Fetch initial quote calls the function, before the 2 minute timer start
+    fetchQuote(); // Fetch quote on start
     _timer = Timer.periodic(const Duration(minutes: 2), (timer) {
-      // Repeating timer
-      fetchQuote(); // Fetch a new quote every 2 minutes
+      fetchQuote(); // Refresh quote every 2 minutes
     });
   }
 
-  // Overriding the built in dispose method both modifying it and extending it, dispose at default runs when the app is closed
   @override
-  // this iis important as the time will keep running even if we close the app wasting memory and cpu resourves
   void dispose() {
-    _timer.cancel(); // Cancel timer to prevent memory leaks
+    _timer.cancel(); // Prevent memory leaks
     super.dispose();
   }
 
-  // Retrive data from API through HTTP library
-  // Async, so the app does not freeze and UI is responsive, so flutter run this function in the background.
+  // Retrieve data from API through HTTP request
   Future<void> fetchQuote() async {
-    final response = await http.get(Uri.parse(
-        'https://zenquotes.io/api/random')); // Get request, await wait unttil the API responds before moving to the next line
+    final response =
+        await http.get(Uri.parse('https://zenquotes.io/api/random'));
 
     if (response.statusCode == 200) {
-      // == 200 means it recieves successfuly
-      final data = jsonDecode(response
-          .body); // Extracts the raw JSON string and convert into a dart object
+      final data = jsonDecode(response.body);
       setState(() {
-        // Show in the ui
-        quote = data[0]['q']; // Quote text
-        author = data[0]['a']; // Author name
+        quote = data[0]['q'];
+        author = data[0]['a'];
       });
     } else {
       setState(() {
-        // If no interent
         quote = "Failed to load quote.";
         author = "";
       });
     }
   }
 
+  void completeTask() {
+    setState(() {
+      totalTask++;
+      if (totalTask >= tasksToLevelUp) {
+        level++;
+        totalTask = 0;
+        tasksToLevelUp += 2;
+      }
+    });
+  }
+
+  // Function to delete a task
+  void deleteTask(int index) {
+    setState(() {
+      tasks.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    String formattedDate =
+        DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now());
+    double progress = totalTask / tasksToLevelUp;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Gradient Covering Full Screen
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 30, 117, 231),
-                  Color.fromARGB(255, 28, 51, 225),
-                  Color.fromARGB(255, 45, 78, 226)
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomCenter,
-              ),
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.blue.shade900,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.home, color: Colors.white),
+              onPressed: () {},
             ),
-          ),
+            IconButton(
+              icon: const Icon(Icons.bar_chart, color: Colors.white),
+              onPressed: () {},
+            ),
+            const SizedBox(width: 40),
+            IconButton(
+              icon: const Icon(Icons.people, color: Colors.white),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: const Icon(Icons.person, color: Colors.white),
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.greenAccent,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, size: 30, color: Colors.white),
+        onPressed: () {},
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-          Column(
-            children: [
-              const SizedBox(height: 60),
-
-              // Profile Picture & Username
-              Row(
-                children: [
-                  const SizedBox(width: 40),
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage(profileImagePath),
-                    backgroundColor: Colors.transparent,
-                  ),
-                  const SizedBox(width: 20),
-                  Text(
-                    "Hello $userName!",
-                    style: const TextStyle(
-                      fontSize: 30,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20), // Space between username and quote
-
-              // Quote Display
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Column(
-                  children: [
-                    Text(
-                      quote,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.white70,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "- $author",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.white54,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-
-                    // ======== TO DO TILES ======
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20), // Controls outer spacing
-                      child: LeisureTile(), // Now it will expand properly
-                    ),
+      // Enable Vertical Scrolling
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(), // Smooth scrolling effect
+        child: Column(
+          children: [
+            // Background Gradient Covering Full Screen
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color.fromARGB(255, 30, 117, 231),
+                    Color.fromARGB(255, 28, 51, 225),
+                    Color.fromARGB(255, 45, 78, 226)
                   ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-            ],
-          ),
-        ],
+              child: Column(
+                children: [
+                  const SizedBox(height: 25),
+
+                  // Display Date at the Top
+                  Text(
+                    formattedDate,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Profile Picture & Username
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: AssetImage(profileImagePath),
+                        backgroundColor: Colors.transparent,
+                      ),
+                      const SizedBox(width: 20),
+                      Text(
+                        "Hello $userName!",
+                        style: const TextStyle(
+                          fontSize: 30,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Quote Display
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Column(
+                      children: [
+                        Text(
+                          quote,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white70,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          "- $author",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white54,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Level Display
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      "Level $level",
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // Task Progress
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Tasks: ",
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          "$totalTask / $tasksToLevelUp",
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.greenAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Progress Bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: Colors.white24,
+                        color: Colors.greenAccent,
+                        minHeight: 12,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Leisure Task List (Scrollable)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: LeisureTile(tasks: tasks, onDelete: deleteTask),
+                  ),
+
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
