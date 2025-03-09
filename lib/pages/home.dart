@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:in_a_year/pages/addTask.dart';
+import 'package:in_a_year/pages/profile.dart';
 import 'package:in_a_year/pages/todoSocial_tile.dart';
 import 'package:in_a_year/pages/todoWork_tile.dart';
 import 'package:intl/intl.dart';
@@ -118,7 +119,27 @@ class _HomePageState extends State<HomePage> {
             ),
             IconButton(
               icon: const Icon(Icons.person, color: Colors.white),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(
+                      userName: userName,
+                      profileImagePath: profileImagePath,
+                      major: "Your Major Here",
+                      dateOfBirth: "Your Date of Birth Here",
+                      email: "your.email@example.com",
+                      onUpdateProfile:
+                          (newName, newImagePath, newMajor, newDOB, newEmail) {
+                        setState(() {
+                          userName = newName;
+                          profileImagePath = newImagePath;
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
