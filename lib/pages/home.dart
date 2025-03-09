@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:in_a_year/pages/addTask.dart';
+import 'package:in_a_year/pages/todoSocial_tile.dart';
+import 'package:in_a_year/pages/todoWork_tile.dart';
 import 'package:intl/intl.dart';
 import 'package:in_a_year/pages/todoLeisure_tile.dart';
 
@@ -80,9 +83,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Function to delete a task
-  void deleteTask(int index) {
+  void deleteTask(Map<String, String> taskToDelete) {
     setState(() {
-      tasks.removeAt(index);
+      tasks.removeWhere((task) => task == taskToDelete);
     });
   }
 
@@ -124,7 +127,18 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.greenAccent,
         shape: const CircleBorder(),
         child: const Icon(Icons.add, size: 30, color: Colors.white),
-        onPressed: () {},
+        onPressed: () async {
+          final newTask = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddTaskPage()),
+          );
+
+          if (newTask != null) {
+            setState(() {
+              tasks.add(newTask);
+            });
+          }
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
@@ -279,15 +293,70 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 10),
 
                   // Leisure Task List (Scrollable)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: LeisureTile(tasks: tasks, onDelete: deleteTask),
+                  LeisureTile(
+                    tasks: tasks
+                        .where((task) => task["category"] == "Leisure")
+                        .toList(),
+                    onDelete: deleteTask, // Make sure this is correctly passed
+                    onEdit: (oldTask, updatedTask) {
+                      setState(() {
+                        int originalIndex = tasks.indexWhere((task) =>
+                            task["title"] == oldTask["title"] &&
+                            task["dueDate"] ==
+                                oldTask["dueDate"]); // Find the correct task
+
+                        if (originalIndex != -1) {
+                          tasks[originalIndex] =
+                              updatedTask; // Replace the task
+                        }
+                      });
+                    },
                   ),
 
-                  const SizedBox(height: 40),
+                  SocialTile(
+                    tasks: tasks
+                        .where((task) => task["category"] == "Social")
+                        .toList(),
+                    onDelete: deleteTask, // Make sure this is correctly passed
+                    onEdit: (oldTask, updatedTask) {
+                      setState(() {
+                        int originalIndex = tasks.indexWhere((task) =>
+                            task["title"] == oldTask["title"] &&
+                            task["dueDate"] ==
+                                oldTask["dueDate"]); // Find the correct task
+
+                        if (originalIndex != -1) {
+                          tasks[originalIndex] =
+                              updatedTask; // Replace the task
+                        }
+                      });
+                    },
+                  ),
+
+                  WorkTile(
+                    tasks: tasks
+                        .where((task) => task["category"] == "Work")
+                        .toList(),
+                    onDelete: deleteTask, // Make sure this is correctly passed
+                    onEdit: (oldTask, updatedTask) {
+                      setState(() {
+                        int originalIndex = tasks.indexWhere((task) =>
+                            task["title"] == oldTask["title"] &&
+                            task["dueDate"] ==
+                                oldTask["dueDate"]); // Find the correct task
+
+                        if (originalIndex != -1) {
+                          tasks[originalIndex] =
+                              updatedTask; // Replace the task
+                        }
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
