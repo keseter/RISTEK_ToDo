@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:in_a_year/pages/home.dart';
+import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+void main() async {
+  // Reqwired when using await in main(), ensure it is fully initialized beforerunning the app and also plugins
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initializes Hive This sets up Hive for use in a Flutter application, Required Before Using Hive: Before opening a box, Hive must be initialized.
+  // await acts as a pause
+  await Hive.initFlutter();
+  await Hive.openBox('profileBox'); // Open the box for storing profile data
+
   runApp(const MyApp());
 }
 

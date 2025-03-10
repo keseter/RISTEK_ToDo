@@ -4,10 +4,12 @@ import 'package:intl/intl.dart';
 import 'editTask.dart';
 
 class WorkTile extends StatelessWidget {
+  // Define
   final List<Map<String, String>> tasks;
   final Function(Map<String, String>) onDelete;
   final Function(Map<String, String>, Map<String, String>) onEdit;
 
+  // Required parameter if used by other pages or class
   const WorkTile(
       {super.key,
       required this.tasks,
@@ -19,13 +21,15 @@ class WorkTile extends StatelessWidget {
     return ListView.builder(
       shrinkWrap: true, // Prevent infinite height
       physics:
-          const NeverScrollableScrollPhysics(), // Sync with HomePage scroll
+          const NeverScrollableScrollPhysics(), // Sync with HomePage scroll, overriding
       itemCount: tasks.length,
       itemBuilder: (context, index) {
         return Dismissible(
+          // allows to be swiped
           key: Key(tasks[index]["title"]!), // Unique key for each task
           direction: DismissDirection.endToStart, // Swipe left to delete
           background: Container(
+            //background of the dismissable
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
             color: Colors.red,
@@ -48,13 +52,18 @@ class WorkTile extends StatelessWidget {
               ),
             );
           },
+
+          // Container wrapped inside dismissable
           child: InkWell(
+            // provide a tap click effect inkwell
             onTap: () async {
               final updatedTask = await Navigator.push(
+                // opens a new screen edittask, the wait ensures that flutter waits for the user to reurn from the EditTaskPage before continue execution
                 context,
                 MaterialPageRoute(
                   builder: (context) => EditTaskPage(
-                    task: tasks[index],
+                    task: tasks[
+                        index], // Passes the selected task at a certain index to the edit page
                     onUpdate: (updatedTask) {}, // No update inside EditTaskPage
                   ),
                 ),
@@ -62,7 +71,7 @@ class WorkTile extends StatelessWidget {
 
               if (updatedTask != null) {
                 onEdit(tasks[index],
-                    updatedTask); // Pass both old and updated task to HomePage
+                    updatedTask); // Pass both old and updated task to HomePage, so that the index in the old task could be replaxed by the edited tak
               }
             },
             child: Container(
@@ -114,7 +123,7 @@ class WorkTile extends StatelessWidget {
 
                   // Due Date
                   Text(
-                    "Due: ${DateFormat('MMMM d, yyyy').format(DateTime.parse(tasks[index]["dueDate"]!))}",
+                    "Due: ${DateFormat('MMMM d, yyyy').format(DateTime.parse(tasks[index]["dueDate"]!))}", // fprmatting
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 8,

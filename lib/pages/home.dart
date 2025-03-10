@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:in_a_year/pages/addTask.dart';
 import 'package:in_a_year/pages/profile.dart';
@@ -37,41 +38,66 @@ class _HomePageState extends State<HomePage> {
     {"title": "Go for a walk", "dueDate": "2024-03-15"},
   ];
 
-  // Runs when the widget is created
+  // Runs when the the widget is created, it runs only once when the screen widget is first created
+  // this is where we set up things that should start when the app loads
   @override
   void initState() {
+    // using super.initState does not break flutter default behavior so it keeps existing
     super.initState();
+    _loadProfileData(); // Load profile data when app starts
     fetchQuote(); // Fetch quote on start
     _timer = Timer.periodic(const Duration(minutes: 2), (timer) {
       fetchQuote(); // Refresh quote every 2 minutes
     });
   }
 
+  // Overriding the built in dispose method both modifying it and extending it, dispose at default runs when the app is closed
   @override
+  // this iis important as the time will keep running even if we close the app wasting memory and cpu resourves
   void dispose() {
     _timer.cancel(); // Prevent memory leaks
     super.dispose();
   }
 
-  // Retrieve data from API through HTTP request
+  // Retrive data from API through HTTP library
+  // Async, so the app does not freeze and UI is responsive, so flutter run this function in the background.
   Future<void> fetchQuote() async {
     final response =
         await http.get(Uri.parse('https://zenquotes.io/api/random'));
 
+    // == 200 means it recieves successfuly
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(response
+          .body); // Extracts the raw JSON string and convert into a dart object
       setState(() {
-        quote = data[0]['q'];
-        author = data[0]['a'];
+        // Show in the ui
+        quote = data[0]['q']; // Quote text
+        author = data[0]['a']; // Author name
       });
     } else {
       setState(() {
+        // If no interent
         quote = "Failed to load quote.";
         author = "";
       });
     }
   }
 
+  void _loadProfileData() {
+    final profileBox = Hive.box(
+        'profileBox'); //  This retrieves the Hive box named 'profileBox, in main
+
+    // setState() ensures that any changes to userName or profileImagePath will immediately reflect in the UI.
+    setState(() {
+      // Retrieves the Saved User Name: This fetches 'userName' from Hive storage.
+      // default Value If 'userName' is not found in Hive, it defaults to 'Your Name'.
+      userName = profileBox.get('userName', defaultValue: 'Your Name');
+      profileImagePath = profileBox.get('profileImagePath',
+          defaultValue: 'assets/cropped_image.png');
+    });
+  }
+
+  // ranking system Completeing task
   void completeTask() {
     setState(() {
       totalTask++;
@@ -92,11 +118,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Formatting date
     String formattedDate =
         DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now());
+
+    // Progress bar for every task the user complete stored in a variable
     double progress = totalTask / tasksToLevelUp;
 
     return Scaffold(
+      // Bottom navbar
       bottomNavigationBar: BottomAppBar(
         color: Colors.blue.shade900,
         shape: const CircularNotchedRectangle(),
@@ -117,6 +147,8 @@ class _HomePageState extends State<HomePage> {
               icon: const Icon(Icons.people, color: Colors.white),
               onPressed: () {},
             ),
+
+            // Route to about
             IconButton(
               icon: const Icon(Icons.person, color: Colors.white),
               onPressed: () {
@@ -124,6 +156,7 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ProfilePage(
+                      // pass user date from home to profile page with its required paramters
                       userName: userName,
                       profileImagePath: profileImagePath,
                       major: "Your Major Here",
@@ -144,8 +177,10 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+
+      // Add task button
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.greenAccent,
+        backgroundColor: const Color.fromARGB(255, 15, 26, 235),
         shape: const CircleBorder(),
         child: const Icon(Icons.add, size: 30, color: Colors.white),
         onPressed: () async {
@@ -168,7 +203,7 @@ class _HomePageState extends State<HomePage> {
         physics: const BouncingScrollPhysics(), // Smooth scrolling effect
         child: Column(
           children: [
-            // Background Gradient Covering Full Screen
+            // Background Gradient Covering Full Screen with bue theme
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
@@ -304,8 +339,10 @@ class _HomePageState extends State<HomePage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: ClipRRect(
+                      // cut corners and prevent overflowing clipRRect
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
+                        // Progess every task is done
                         value: progress,
                         backgroundColor: Colors.white24,
                         color: Colors.greenAccent,
@@ -314,13 +351,16 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
 
+                  // ======== TO DO TILES ======
                   const SizedBox(height: 10),
 
-                  // Leisure Task List (Scrollable)
+                  // Leisure Task List
                   LeisureTile(
                     tasks: tasks
-                        .where((task) => task["category"] == "Leisure")
-                        .toList(),
+                        .where((task) =>
+                            task["category"] ==
+                            "Leisure") // Filters the list to only include tasks where the "category" is "Leisure".
+                        .toList(), //  Converts the filtered tasks into a new list.
                     onDelete: deleteTask, // Make sure this is correctly passed
                     onEdit: (oldTask, updatedTask) {
                       setState(() {
@@ -341,7 +381,7 @@ class _HomePageState extends State<HomePage> {
                     tasks: tasks
                         .where((task) => task["category"] == "Social")
                         .toList(),
-                    onDelete: deleteTask, // Make sure this is correctly passed
+                    onDelete: deleteTask,
                     onEdit: (oldTask, updatedTask) {
                       setState(() {
                         int originalIndex = tasks.indexWhere((task) =>
@@ -361,7 +401,7 @@ class _HomePageState extends State<HomePage> {
                     tasks: tasks
                         .where((task) => task["category"] == "Work")
                         .toList(),
-                    onDelete: deleteTask, // Make sure this is correctly passed
+                    onDelete: deleteTask,
                     onEdit: (oldTask, updatedTask) {
                       setState(() {
                         int originalIndex = tasks.indexWhere((task) =>
@@ -370,8 +410,7 @@ class _HomePageState extends State<HomePage> {
                                 oldTask["dueDate"]); // Find the correct task
 
                         if (originalIndex != -1) {
-                          tasks[originalIndex] =
-                              updatedTask; // Replace the task
+                          tasks[originalIndex] = updatedTask;
                         }
                       });
                     },

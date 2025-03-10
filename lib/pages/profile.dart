@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
+import 'package:hive/hive.dart';
 
+// function of this class is to recieve data, store initiial value, canot update ui
 class ProfilePage extends StatefulWidget {
+  // Needed variables
   final String userName;
   final String profileImagePath;
   final String major;
@@ -11,6 +14,7 @@ class ProfilePage extends StatefulWidget {
   final String email;
   final Function(String, String, String, String, String) onUpdateProfile;
 
+  // Requiired vairalbe needed whhen other pages are trying to access this page
   const ProfilePage({
     super.key,
     required this.userName,
@@ -25,7 +29,10 @@ class ProfilePage extends StatefulWidget {
   _ProfilePageState createState() => _ProfilePageState();
 }
 
+// this is where we manage text fields and form of intereactiopns
+// Manages ui and logic, set state to modify UI
 class _ProfilePageState extends State<ProfilePage> {
+  // Controllers for text fields input
   late TextEditingController _nameController;
   late TextEditingController _majorController;
   late TextEditingController _dobController;
@@ -33,18 +40,24 @@ class _ProfilePageState extends State<ProfilePage> {
   late String _profileImagePath;
 
   @override
+  // Retrieves stored user profile date from hive, initiialize and loaded, widget values are the one if no data exist in the Hive
   void initState() {
     super.initState();
+    final profileBox = Hive.box('profileBox');
 
-    // Retrieve saved data from Hive or set default values
-    _nameController = TextEditingController(text: widget.userName);
-    _majorController = TextEditingController(text: widget.major);
-    _dobController = TextEditingController(text: widget.dateOfBirth);
-    _emailController = TextEditingController(text: widget.email);
-    _profileImagePath = widget.profileImagePath;
+    _nameController = TextEditingController(
+        text: profileBox.get('userName', defaultValue: widget.userName));
+    _majorController = TextEditingController(
+        text: profileBox.get('major', defaultValue: widget.major));
+    _dobController = TextEditingController(
+        text: profileBox.get('dateOfBirth', defaultValue: widget.dateOfBirth));
+    _emailController = TextEditingController(
+        text: profileBox.get('email', defaultValue: widget.email));
+    _profileImagePath = profileBox.get('profileImagePath',
+        defaultValue: widget.profileImagePath);
   }
 
-  // Function to select a new profile picture
+  // Function to select a new profile picture, template
   Future<void> _pickImage() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -59,7 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: DateTime.now(), // sets defulat date
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
@@ -72,6 +85,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // Function to save the profile data
   void _saveProfile() {
+    final profileBox =
+        Hive.box('profileBox'); // opens  for the hive storage box
+
+    // save all this to Hive
+    profileBox.put('userName', _nameController.text);
+    profileBox.put('profileImagePath', _profileImagePath);
+    profileBox.put('major', _majorController.text);
+    profileBox.put('dateOfBirth', _dobController.text);
+    profileBox.put('email', _emailController.text);
+
+    // Passes the latest user input
     widget.onUpdateProfile(
       _nameController.text,
       _profileImagePath,
@@ -80,20 +104,26 @@ class _ProfilePageState extends State<ProfilePage> {
       _emailController.text,
     );
 
-    // Show a confirmation message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Profile saved successfully!")),
     );
 
-    // Optionally, navigate back
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          AppBar(title: const Text("My Profile"), backgroundColor: Colors.blue),
+      appBar: AppBar(
+          title: const Text(
+            "My Profile",
+            style: TextStyle(
+              fontSize: 30,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: Colors.blue),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -110,7 +140,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Align(
                   alignment: Alignment.bottomRight,
                   child: Icon(Icons.camera_alt,
-                      color: Colors.white.withOpacity(0.8)),
+                      color:
+                          const Color.fromARGB(255, 0, 0, 0).withOpacity(0.8)),
                 ),
               ),
             ),

@@ -9,11 +9,15 @@ class AddTaskPage extends StatefulWidget {
 }
 
 class _AddTaskPageState extends State<AddTaskPage> {
+  // User text input save in thsi variable
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+
+  // Variables, default is leisure
   String _selectedCategory = "Leisure";
   DateTime? _selectedDate;
 
+  // Method to select date template
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -29,6 +33,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   }
 
   void _createTask() {
+    // this prevents the task tile from being emptu, if one condition is not met
     if (_titleController.text.isEmpty ||
         _selectedDate == null ||
         _descriptionController.text.isEmpty) {
@@ -36,22 +41,34 @@ class _AddTaskPageState extends State<AddTaskPage> {
     }
 
     final task = {
+      // Store in a map
       "title": _titleController.text,
       "dueDate": _selectedDate!.toIso8601String(),
       "category": _selectedCategory,
       "description": _descriptionController.text,
     };
 
+    // pass the data to home screen to be displayeed
     Navigator.pop(context, task);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // App bar
       appBar: AppBar(
-        title: const Text("Add Task"),
-        backgroundColor: Colors.purple,
+        title: const Text(
+          "Add Task",
+          style: const TextStyle(
+            fontSize: 30,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color.fromARGB(255, 20, 157, 216),
       ),
+
+      // The body
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -87,7 +104,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             InkWell(
-              onTap: () => _selectDate(context),
+              // add effects using inkwell
+              onTap: () => _selectDate(context), // opens a calender like dialog
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -97,6 +115,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // Display the selected date in a text
                     Text(
                       _selectedDate == null
                           ? "Select Due Date"
@@ -108,6 +127,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 ),
               ),
             ),
+
+            // Category bar
             const SizedBox(height: 15),
             const Text(
               "Category",
@@ -116,6 +137,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // Row of buttons when selected it changes color
                 _categoryButton("Leisure"),
                 _categoryButton("Social"),
                 _categoryButton("Work"),
@@ -127,7 +149,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
+                  backgroundColor: const Color.fromARGB(255, 51, 9, 221),
                 ),
                 onPressed: _createTask,
                 child: const Text(
@@ -142,16 +164,17 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
   }
 
+  // create each button
   Widget _categoryButton(String category) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: _selectedCategory == category
-            ? Colors.purple
+            ? const Color.fromARGB(255, 18, 2, 255)
             : Colors.grey.shade300,
       ),
       onPressed: () {
         setState(() {
-          _selectedCategory = category;
+          _selectedCategory = category; // change the color
         });
       },
       child: Text(
